@@ -5,33 +5,14 @@ Laّweh is an innovative application designed to bridge the communication gap fo
 
 By leveraging advanced AI technologies, Laّweh enhances accessibility, enabling seamless interactions between Hard of Hearning individuals and the wider community. The application aims to foster inclusivity, reduce communication barriers, and provide essential support in daily interactions, education, and professional environments.
 
-Open the Application
-
-Launch Laّweh on your device.
-Enable Camera Access
-
-Grant the necessary permissions for the app to access your camera.
-Perform an ArSL Gesture
-
-Position your hand clearly within the camera frame.
-Perform the Arabic Sign Language letter or gesture you want to translate.
-View the Translation
-
-The system will recognize the sign and display the corresponding text in real-time.
-
-Utilize Additional Features
-Convert text or speech into sign language animations.
-Adjust settings for better recognition and accessibility.
-Would you like to refine any part further?
-
-
+Laّweh uses Python for backend development, Dart and Flutter for the frontend, and TensorFlow for AI model training. MediaPipe tracks hand gestures in real-time, while Google Cloud manages data storage and processing. Firebase handles real-time synchronization, and NoSQL databases store unstructured data. The development process is supported by Visual Studio Code, GitHub, and Jira.
 
 
 
 
 # Launching Instructions for Laّweh
 ## For Sign to Text Translation:
-1. Open the Laweh App
+1. Open the Laّweh App
 Launch the application on your device.
 
 2. Allow Camera Access
