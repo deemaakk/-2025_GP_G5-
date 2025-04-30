@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "906512269675",
+    "project_id": "laweh-da92d",
+    "storage_bucket": "laweh-da92d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906512269675:android:32254fabdc8bdf38becc2e",
+        "android_client_info": {
+          "package_name": "com.example.demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906512269675:android:4f8e6bd95fdcbb11becc2e",
+        "android_client_info": {
+          "package_name": "com.example.laweh_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906512269675:android:97e37f6ed05fbbd6becc2e",
+        "android_client_info": {
+          "package_name": "com.mycompany.laweh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
