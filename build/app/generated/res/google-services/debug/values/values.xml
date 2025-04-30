@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_defaultSenderId" translatable="false">906512269675</string>
+    <string name="google_api_key" translatable="false">AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM</string>
+    <string name="google_app_id" translatable="false">1:906512269675:android:4f8e6bd95fdcbb11becc2e</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM</string>
+    <string name="google_storage_bucket" translatable="false">laweh-da92d.firebasestorage.app</string>
+    <string name="project_id" translatable="false">laweh-da92d</string>
+</resources>
