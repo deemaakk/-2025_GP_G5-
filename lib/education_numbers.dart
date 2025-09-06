@@ -12,7 +12,7 @@ class NumbersScreen extends StatefulWidget {
 }
 
 class _NumbersScreenState extends State<NumbersScreen> {
-  List<DocumentSnapshot> numbers = [];
+  List<DocumentSnapshot<Map<String, dynamic>>> numbers = [];
   int currentIndex = 0;
   bool isLoading = true;
   late ConfettiController _confettiController;
@@ -42,8 +42,6 @@ class _NumbersScreenState extends State<NumbersScreen> {
         isLoading = false;
       });
     } catch (e) {
-      // ignore: avoid_print
-      print('Error loading numbers: $e');
       setState(() => isLoading = false);
     }
   }
@@ -59,6 +57,22 @@ class _NumbersScreenState extends State<NumbersScreen> {
   void _prev() {
     if (currentIndex > 0) {
       setState(() => currentIndex--);
+    }
+  }
+
+  Future<void> _openPicker() async {
+    if (numbers.isEmpty) return;
+    final int? pickedIndex = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NumbersPickerPage(
+          numbers: numbers,
+          currentIndex: currentIndex,
+        ),
+      ),
+    );
+    if (pickedIndex != null && pickedIndex >= 0 && pickedIndex < numbers.length) {
+      setState(() => currentIndex = pickedIndex);
     }
   }
 
@@ -147,10 +161,9 @@ class _NumbersScreenState extends State<NumbersScreen> {
       );
     }
 
-    final doc = numbers[currentIndex];
-    final data = doc.data() as Map<String, dynamic>;
-    final imageUrl = data['Numberimg'] ?? '';
-    final label = data['Number']?.toString() ?? '';
+    final data = numbers[currentIndex].data()!;
+    final imageUrl = (data['Numberimg'] ?? '').toString();
+    final label = (data['Number'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9ECF7),
@@ -161,6 +174,11 @@ class _NumbersScreenState extends State<NumbersScreen> {
             children: [
               Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.list_alt_rounded, size: 28, color: Color(0xFF153C64)),
+                    onPressed: _openPicker,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: LinearProgressIndicator(
                       value: (currentIndex + 1) / numbers.length,
@@ -217,7 +235,6 @@ class _NumbersScreenState extends State<NumbersScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Next button (left)
                           CircleAvatar(
                             backgroundColor: const Color(0xFF153C64),
                             radius: 28,
@@ -226,7 +243,6 @@ class _NumbersScreenState extends State<NumbersScreen> {
                               onPressed: () => _next(context),
                             ),
                           ),
-                          // Prev button (right)
                           if (currentIndex > 0)
                             CircleAvatar(
                               backgroundColor: const Color(0xFF153C64),
@@ -245,6 +261,89 @@ class _NumbersScreenState extends State<NumbersScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class NumbersPickerPage extends StatelessWidget {
+  final List<DocumentSnapshot<Map<String, dynamic>>> numbers;
+  final int currentIndex;
+
+  const NumbersPickerPage({
+    super.key,
+    required this.numbers,
+    required this.currentIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE9ECF7),
+      appBar: AppBar(
+        title: const Text(
+          'قائمة الأرقام',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF153C64),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+      ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(12),
+        itemCount: numbers.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, i) {
+          final data = numbers[i].data() ?? {};
+          final numberText = (data['Number'] ?? '').toString();
+          final imgUrl = (data['Numberimg'] ?? '').toString();
+
+          return InkWell(
+            onTap: () => Navigator.pop<int>(context, i),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: i == currentIndex ? const Color(0xFF153C64) : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    numberText,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF153C64),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: imgUrl.isEmpty
+                        ? const SizedBox(width: 64, height: 64)
+                        : Image.network(
+                            imgUrl,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
