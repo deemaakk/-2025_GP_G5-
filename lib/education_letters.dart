@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:laweh_app/education_category.dart';
-import 'package:laweh_app/name_to_sign.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:confetti/confetti.dart';
+import 'package:laweh_app/education_category.dart';
+import 'package:laweh_app/name_to_sign.dart';
 
 class LettersScreen extends StatefulWidget {
   const LettersScreen({super.key});
@@ -12,7 +12,9 @@ class LettersScreen extends StatefulWidget {
 }
 
 class _LettersScreenState extends State<LettersScreen> {
-  List<DocumentSnapshot> letters = [];
+  static const String kOrderField = 'lettrrorder';
+
+  List<DocumentSnapshot<Map<String, dynamic>>> letters = [];
   int currentIndex = 0;
   bool isLoading = true;
 
@@ -26,7 +28,7 @@ class _LettersScreenState extends State<LettersScreen> {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('Education-letters')
-          .orderBy('lettrrorder')
+          .orderBy(kOrderField)
           .get();
 
       setState(() {
@@ -34,8 +36,6 @@ class _LettersScreenState extends State<LettersScreen> {
         isLoading = false;
       });
     } catch (e) {
-      // ignore: avoid_print
-      print('Error loading letters: $e');
       setState(() => isLoading = false);
     }
   }
@@ -54,10 +54,25 @@ class _LettersScreenState extends State<LettersScreen> {
     }
   }
 
+  Future<void> _openPicker() async {
+    if (letters.isEmpty) return;
+    final int? pickedIndex = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LettersPickerPage(
+          letters: letters,
+          currentIndex: currentIndex,
+        ),
+      ),
+    );
+    if (pickedIndex != null && pickedIndex >= 0 && pickedIndex < letters.length) {
+      setState(() => currentIndex = pickedIndex);
+    }
+  }
+
   void _showLessonCompleteDialog(BuildContext context) {
-    // ignore: no_leading_underscores_for_local_identifiers
-    final _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    _confettiController.play();
+    final confetti = ConfettiController(duration: const Duration(seconds: 3));
+    confetti.play();
 
     showDialog(
       context: context,
@@ -84,12 +99,12 @@ class _LettersScreenState extends State<LettersScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF153C64),
+                      backgroundColor: Color(0xFF153C64),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
-                      _confettiController.stop();
+                      confetti.stop();
                       Navigator.of(context).pop();
                       Navigator.pushReplacement(
                         context,
@@ -109,7 +124,7 @@ class _LettersScreenState extends State<LettersScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
-                      _confettiController.stop();
+                      confetti.stop();
                       Navigator.of(context).pop();
                       Navigator.push(
                         context,
@@ -128,7 +143,7 @@ class _LettersScreenState extends State<LettersScreen> {
           Positioned(
             top: -20,
             child: ConfettiWidget(
-              confettiController: _confettiController,
+              confettiController: confetti,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
               emissionFrequency: 0.1,
@@ -155,13 +170,13 @@ class _LettersScreenState extends State<LettersScreen> {
     if (letters.isEmpty) {
       return const Scaffold(
         backgroundColor: Color(0xFFE9ECF7),
-        body: Center(child: Text('No letters found')),
+        body: Center(child: Text('لا توجد حروف حالياً')),
       );
     }
 
-    final doc = letters[currentIndex];
-    final imageUrl = doc['imgletter'];
-    final label = doc['letter'];
+    final doc = letters[currentIndex].data()!;
+    final imageUrl = (doc['imgletter'] ?? '').toString();
+    final label = (doc['letter'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9ECF7),
@@ -172,6 +187,12 @@ class _LettersScreenState extends State<LettersScreen> {
             children: [
               Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.list_alt_rounded, size: 28, color: Color(0xFF153C64)),
+                    onPressed: _openPicker,
+                    tooltip: 'قائمة الحروف',
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: LinearProgressIndicator(
                       value: (currentIndex + 1) / letters.length,
@@ -187,7 +208,6 @@ class _LettersScreenState extends State<LettersScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              const SizedBox(height: 8),
               Expanded(
                 child: Center(
                   child: Column(
@@ -227,7 +247,6 @@ class _LettersScreenState extends State<LettersScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Next button (left)
                           CircleAvatar(
                             backgroundColor: const Color(0xFF153C64),
                             radius: 28,
@@ -236,17 +255,15 @@ class _LettersScreenState extends State<LettersScreen> {
                               onPressed: () => _next(context),
                             ),
                           ),
-                          // Prev button (right)
-                          currentIndex > 0
-                              ? CircleAvatar(
-                                  backgroundColor: const Color(0xFF153C64),
-                                  radius: 28,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                                    onPressed: _prev,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
+                          if (currentIndex > 0)
+                            CircleAvatar(
+                              backgroundColor: const Color(0xFF153C64),
+                              radius: 28,
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                                onPressed: _prev,
+                              ),
+                            ),
                         ],
                       ),
                     ],
@@ -256,6 +273,89 @@ class _LettersScreenState extends State<LettersScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class LettersPickerPage extends StatelessWidget {
+  final List<DocumentSnapshot<Map<String, dynamic>>> letters;
+  final int currentIndex;
+
+  const LettersPickerPage({
+    super.key,
+    required this.letters,
+    required this.currentIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE9ECF7),
+      appBar: AppBar(
+        title: const Text(
+          'قائمة الحروف',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color(0xFF153C64),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+      ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(12),
+        itemCount: letters.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, i) {
+          final data = letters[i].data() ?? {};
+          final letter = (data['letter'] ?? '').toString();
+          final imgUrl = (data['imgletter'] ?? '').toString();
+
+          return InkWell(
+            onTap: () => Navigator.pop<int>(context, i),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: i == currentIndex ? const Color(0xFF153C64) : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    letter,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF153C64),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: imgUrl.isEmpty
+                        ? const SizedBox(width: 64, height: 64)
+                        : Image.network(
+                            imgUrl,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
