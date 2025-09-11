@@ -318,10 +318,6 @@ class _NumberDetailScreenState extends State<NumberDetailScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.list_alt_rounded, size: 28, color: Color(0xFF153C64)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.arrow_forward, size: 28, color: Color(0xFF153C64)),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -388,7 +384,7 @@ class _NumberDetailScreenState extends State<NumberDetailScreen> {
                               radius: 28,
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                                onPressed: () => _prev(),
+                                onPressed: _prev,
                               ),
                             ),
                         ],
