@@ -1,53 +1,234 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:laweh_app/education_category.dart';
 import 'package:confetti/confetti.dart';
+import 'package:laweh_app/education_category.dart';
+import 'package:laweh_app/name_to_sign.dart';
 
-class NumbersScreen extends StatefulWidget {
-  const NumbersScreen({super.key});
+class LettersScreen extends StatefulWidget {
+  const LettersScreen({super.key});
 
   @override
-  State<NumbersScreen> createState() => _NumbersScreenState();
+  State<LettersScreen> createState() => _LettersScreenState();
 }
 
-class _NumbersScreenState extends State<NumbersScreen> {
-  List<DocumentSnapshot<Map<String, dynamic>>> numbers = [];
-  int currentIndex = 0;
-  bool isLoading = true;
-  late ConfettiController _confettiController;
+class _LettersScreenState extends State<LettersScreen> {
+  static const String kOrderField = 'lettrrorder';
+
+  List<DocumentSnapshot<Map<String, dynamic>>> _allLetters = [];
+  List<DocumentSnapshot<Map<String, dynamic>>> _filtered = [];
+  bool _loading = true;
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    _initialize();
+    _loadLetters();
   }
 
-  @override
-  void dispose() {
-    _confettiController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initialize() async {
+  Future<void> _loadLetters() async {
     try {
       final snapshot = await FirebaseFirestore.instance
-          .collection('Education-Numbers')
-          .orderBy('NumOrder')
+          .collection('Education-letters')
+          .orderBy(kOrderField)
           .get();
 
       setState(() {
-        numbers = snapshot.docs;
-        isLoading = false;
+        _allLetters = snapshot.docs;
+        _filtered = List.of(_allLetters);
+        _loading = false;
       });
     } catch (e) {
-      setState(() => isLoading = false);
+      setState(() => _loading = false);
     }
   }
 
+  void _onSearch(String q) {
+    setState(() {
+      _query = q.trim();
+      if (_query.isEmpty) {
+        _filtered = List.of(_allLetters);
+      } else {
+        final lower = _query.toLowerCase();
+        _filtered = _allLetters.where((d) {
+          final data = d.data() ?? {};
+          final letter = (data['letter'] ?? '').toString();
+          return letter.toLowerCase().contains(lower);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFE9ECF7),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_allLetters.isEmpty) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFE9ECF7),
+        body: Center(child: Text('لا توجد حروف حالياً')),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFE9ECF7),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF153C64),
+        centerTitle: true,
+        title: const Text('قائمة الحروف', style: TextStyle(color: Colors.white)),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.arrow_forward, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: TextField(
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                onChanged: _onSearch,
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن حرف…',
+                  hintTextDirection: TextDirection.rtl,
+                  suffixIcon: const Icon(Icons.search),
+                  suffixIconConstraints: const BoxConstraints(minWidth: 40),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12, horizontal: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(child: Text('لا توجد نتائج مطابقة'))
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) {
+                        final data = _filtered[i].data() ?? {};
+                        final letter = (data['letter'] ?? '').toString();
+                        final imgUrl = (data['imgletter'] ?? '').toString();
+                        final fullIndex = _allLetters.indexWhere(
+                          (d) => d.id == _filtered[i].id,
+                        );
+                        return InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LetterDetailScreen(
+                                  letters: _allLetters,
+                                  initialIndex: fullIndex < 0 ? 0 : fullIndex,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      letter,
+                                      textDirection: TextDirection.rtl,
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF153C64),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: imgUrl.isEmpty
+                                      ? Container(
+                                          width: 64,
+                                          height: 64,
+                                          color: const Color(0xFFE9ECF7),
+                                          child: const Icon(Icons.image,
+                                              color: Colors.grey),
+                                        )
+                                      : Image.network(
+                                          imgUrl,
+                                          width: 64,
+                                          height: 64,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              const SizedBox(
+                                            width: 64,
+                                            height: 64,
+                                            child: Icon(
+                                              Icons.image_not_supported,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LetterDetailScreen extends StatefulWidget {
+  final List<DocumentSnapshot<Map<String, dynamic>>> letters;
+  final int initialIndex;
+
+  const LetterDetailScreen({
+    super.key,
+    required this.letters,
+    required this.initialIndex,
+  });
+
+  @override
+  State<LetterDetailScreen> createState() => _LetterDetailScreenState();
+}
+
+class _LetterDetailScreenState extends State<LetterDetailScreen> {
+  late int currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex = widget.initialIndex.clamp(0, widget.letters.length - 1);
+  }
+
   void _next(BuildContext context) {
-    if (currentIndex < numbers.length - 1) {
+    if (currentIndex < widget.letters.length - 1) {
       setState(() => currentIndex++);
     } else {
       _showLessonCompleteDialog(context);
@@ -60,24 +241,9 @@ class _NumbersScreenState extends State<NumbersScreen> {
     }
   }
 
-  Future<void> _openPicker() async {
-    if (numbers.isEmpty) return;
-    final int? pickedIndex = await Navigator.push<int>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NumbersPickerPage(
-          numbers: numbers,
-          currentIndex: currentIndex,
-        ),
-      ),
-    );
-    if (pickedIndex != null && pickedIndex >= 0 && pickedIndex < numbers.length) {
-      setState(() => currentIndex = pickedIndex);
-    }
-  }
-
   void _showLessonCompleteDialog(BuildContext context) {
-    _confettiController.play();
+    final confetti = ConfettiController(duration: const Duration(seconds: 3));
+    confetti.play();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -85,59 +251,90 @@ class _NumbersScreenState extends State<NumbersScreen> {
         alignment: Alignment.topCenter,
         children: [
           Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            backgroundColor: const Color(0xFFF1F4FA),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: const Color(0xFFE9ECF7),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
                     'الدرس مكتمل',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF153C64),
+                      color: Color(0xFF113F67),
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF153C64),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
+                      confetti.stop();
                       Navigator.of(context).pop();
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const EducationCategoryScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const EducationCategoryScreen()),
                       );
                     },
                     child: const Text(
                       'العودة لصفحة الدروس',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      confetti.stop();
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NameToSignScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'جرب كتابة اسمك',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.topCenter,
+          Positioned(
+            top: -20,
             child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirection: pi / 2,
-              emissionFrequency: 0.02,
+              confettiController: confetti,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              emissionFrequency: 0.1,
               numberOfParticles: 10,
-              gravity: 0.3,
-              colors: const [
-                Colors.red,
-                Colors.blue,
-                Colors.green,
-                Colors.orange,
-                Colors.purple,
-              ],
+              maxBlastForce: 8,
+              minBlastForce: 4,
+              gravity: 0.4,
             ),
           ),
         ],
@@ -147,23 +344,9 @@ class _NumbersScreenState extends State<NumbersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFE9ECF7),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (numbers.isEmpty) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFE9ECF7),
-        body: Center(child: Text('No numbers found')),
-      );
-    }
-
-    final data = numbers[currentIndex].data()!;
-    final imageUrl = (data['Numberimg'] ?? '').toString();
-    final label = (data['Number'] ?? '').toString();
+    final doc = widget.letters[currentIndex].data() ?? {};
+    final imageUrl = (doc['imgletter'] ?? '').toString();
+    final label = (doc['letter'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9ECF7),
@@ -174,21 +357,22 @@ class _NumbersScreenState extends State<NumbersScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.list_alt_rounded, size: 28, color: Color(0xFF153C64)),
-                    onPressed: _openPicker,
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: LinearProgressIndicator(
-                      value: (currentIndex + 1) / numbers.length,
+                      value: (currentIndex + 1) / widget.letters.length,
                       backgroundColor: Colors.grey.shade400,
                       valueColor: const AlwaysStoppedAnimation(Colors.green),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.arrow_forward),
+                    icon: const Icon(Icons.list_alt_rounded,
+                        size: 28, color: Color(0xFF153C64)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward,
+                        size: 28, color: Color(0xFF153C64)),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -207,13 +391,21 @@ class _NumbersScreenState extends State<NumbersScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
                         ),
-                        child: imageUrl.isNotEmpty
-                            ? Image.network(
+                        child: imageUrl.isEmpty
+                            ? const SizedBox(
+                                height: 300,
+                                child: Center(child: Icon(Icons.image, size: 48)),
+                              )
+                            : Image.network(
                                 imageUrl,
                                 height: 300,
                                 fit: BoxFit.contain,
-                              )
-                            : const Text("لا توجد صورة"),
+                                errorBuilder: (_, __, ___) => const SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                      child: Icon(Icons.image_not_supported)),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 36),
                       Container(
@@ -227,7 +419,9 @@ class _NumbersScreenState extends State<NumbersScreen> {
                         child: Center(
                           child: Text(
                             label,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(
+                                fontSize: 28, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -239,7 +433,8 @@ class _NumbersScreenState extends State<NumbersScreen> {
                             backgroundColor: const Color(0xFF153C64),
                             radius: 28,
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.white),
                               onPressed: () => _next(context),
                             ),
                           ),
@@ -248,7 +443,8 @@ class _NumbersScreenState extends State<NumbersScreen> {
                               backgroundColor: const Color(0xFF153C64),
                               radius: 28,
                               child: IconButton(
-                                icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                                icon: const Icon(Icons.arrow_forward,
+                                    color: Colors.white),
                                 onPressed: _prev,
                               ),
                             ),
@@ -261,89 +457,6 @@ class _NumbersScreenState extends State<NumbersScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class NumbersPickerPage extends StatelessWidget {
-  final List<DocumentSnapshot<Map<String, dynamic>>> numbers;
-  final int currentIndex;
-
-  const NumbersPickerPage({
-    super.key,
-    required this.numbers,
-    required this.currentIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE9ECF7),
-      appBar: AppBar(
-        title: const Text(
-          'قائمة الأرقام',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF153C64),
-        iconTheme: const IconThemeData(color: Colors.white),
-        centerTitle: true,
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: numbers.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final data = numbers[i].data() ?? {};
-          final numberText = (data['Number'] ?? '').toString();
-          final imgUrl = (data['Numberimg'] ?? '').toString();
-
-          return InkWell(
-            onTap: () => Navigator.pop<int>(context, i),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: i == currentIndex ? const Color(0xFF153C64) : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    numberText,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF153C64),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: imgUrl.isEmpty
-                        ? const SizedBox(width: 64, height: 64)
-                        : Image.network(
-                            imgUrl,
-                            width: 64,
-                            height: 64,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.image_not_supported,
-                              color: Colors.grey,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }
