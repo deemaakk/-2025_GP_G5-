@@ -1,30 +1,32 @@
 name: laweh_app
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+
+  # Firebase
   firebase_auth: ^4.15.0
   cloud_firestore: ^4.15.0
   firebase_app_check: ^0.2.1+8
   firebase_core: ^2.32.0
   firebase_storage: ^11.6.7
 
-
-
-  cupertino_icons: ^1.0.8
+  # Features
+  image_picker: ^1.2.0
+  google_mlkit_text_recognition: ^0.13.0
+  speech_to_text: ^6.6.2
   confetti: ^0.7.0
   font_awesome_flutter: ^10.6.0
   video_player: ^2.7.0
   fluttermoji: ^1.0.2
-  image_picker: ^1.0.4
-
+  flutter_tts: ^4.2.3
   flutter_localizations:
     sdk: flutter
 
@@ -49,5 +51,3 @@ flutter:
     - assets/learn.jpg
     - assets/default.png
     - assets/avatars/
-
-   
