@@ -1,38 +1,44 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:confetti/confetti.dart';
 import 'package:laweh_app/education_category.dart';
-import 'package:laweh_app/name_to_sign.dart';
+import 'package:confetti/confetti.dart';
 
-class LettersScreen extends StatefulWidget {
-  const LettersScreen({super.key});
+class NumbersScreen extends StatefulWidget {
+  const NumbersScreen({super.key});
 
   @override
-  State<LettersScreen> createState() => _LettersScreenState();
+  State<NumbersScreen> createState() => _NumbersScreenState();
 }
 
-class _LettersScreenState extends State<LettersScreen> {
-  static const String kOrderField = 'lettrrorder';
-
-  List<DocumentSnapshot<Map<String, dynamic>>> letters = [];
+class _NumbersScreenState extends State<NumbersScreen> {
+  List<DocumentSnapshot<Map<String, dynamic>>> numbers = [];
   int currentIndex = 0;
   bool isLoading = true;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
-    _loadLetters();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _initialize();
   }
 
-  Future<void> _loadLetters() async {
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initialize() async {
     try {
       final snapshot = await FirebaseFirestore.instance
-          .collection('Education-letters')
-          .orderBy(kOrderField)
+          .collection('Education-Numbers')
+          .orderBy('NumOrder')
           .get();
 
       setState(() {
-        letters = snapshot.docs;
+        numbers = snapshot.docs;
         isLoading = false;
       });
     } catch (e) {
@@ -41,7 +47,7 @@ class _LettersScreenState extends State<LettersScreen> {
   }
 
   void _next(BuildContext context) {
-    if (currentIndex < letters.length - 1) {
+    if (currentIndex < numbers.length - 1) {
       setState(() => currentIndex++);
     } else {
       _showLessonCompleteDialog(context);
@@ -55,25 +61,23 @@ class _LettersScreenState extends State<LettersScreen> {
   }
 
   Future<void> _openPicker() async {
-    if (letters.isEmpty) return;
+    if (numbers.isEmpty) return;
     final int? pickedIndex = await Navigator.push<int>(
       context,
       MaterialPageRoute(
-        builder: (_) => LettersPickerPage(
-          letters: letters,
+        builder: (_) => NumbersPickerPage(
+          numbers: numbers,
           currentIndex: currentIndex,
         ),
       ),
     );
-    if (pickedIndex != null && pickedIndex >= 0 && pickedIndex < letters.length) {
+    if (pickedIndex != null && pickedIndex >= 0 && pickedIndex < numbers.length) {
       setState(() => currentIndex = pickedIndex);
     }
   }
 
   void _showLessonCompleteDialog(BuildContext context) {
-    final confetti = ConfettiController(duration: const Duration(seconds: 3));
-    confetti.play();
-
+    _confettiController.play();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -81,8 +85,8 @@ class _LettersScreenState extends State<LettersScreen> {
         alignment: Alignment.topCenter,
         children: [
           Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            backgroundColor: const Color(0xFFE9ECF7),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: const Color(0xFFF1F4FA),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               child: Column(
@@ -91,20 +95,19 @@ class _LettersScreenState extends State<LettersScreen> {
                   const Text(
                     'الدرس مكتمل',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF113F67),
+                      color: Color(0xFF153C64),
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF153C64),
+                      backgroundColor: const Color(0xFF153C64),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
-                      confetti.stop();
                       Navigator.of(context).pop();
                       Navigator.pushReplacement(
                         context,
@@ -116,41 +119,25 @@ class _LettersScreenState extends State<LettersScreen> {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      confetti.stop();
-                      Navigator.of(context).pop();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const NameToSignScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'جرب كتابة اسمك',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
-          Positioned(
-            top: -20,
+          Align(
+            alignment: Alignment.topCenter,
             child: ConfettiWidget(
-              confettiController: confetti,
-              blastDirectionality: BlastDirectionality.explosive,
-              shouldLoop: false,
-              emissionFrequency: 0.1,
+              confettiController: _confettiController,
+              blastDirection: pi / 2,
+              emissionFrequency: 0.02,
               numberOfParticles: 10,
-              maxBlastForce: 8,
-              minBlastForce: 4,
-              gravity: 0.4,
+              gravity: 0.3,
+              colors: const [
+                Colors.red,
+                Colors.blue,
+                Colors.green,
+                Colors.orange,
+                Colors.purple,
+              ],
             ),
           ),
         ],
@@ -167,16 +154,16 @@ class _LettersScreenState extends State<LettersScreen> {
       );
     }
 
-    if (letters.isEmpty) {
+    if (numbers.isEmpty) {
       return const Scaffold(
         backgroundColor: Color(0xFFE9ECF7),
-        body: Center(child: Text('لا توجد حروف حالياً')),
+        body: Center(child: Text('No numbers found')),
       );
     }
 
-    final doc = letters[currentIndex].data()!;
-    final imageUrl = (doc['imgletter'] ?? '').toString();
-    final label = (doc['letter'] ?? '').toString();
+    final data = numbers[currentIndex].data()!;
+    final imageUrl = (data['Numberimg'] ?? '').toString();
+    final label = (data['Number'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFE9ECF7),
@@ -190,12 +177,11 @@ class _LettersScreenState extends State<LettersScreen> {
                   IconButton(
                     icon: const Icon(Icons.list_alt_rounded, size: 28, color: Color(0xFF153C64)),
                     onPressed: _openPicker,
-                    tooltip: 'قائمة الحروف',
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: LinearProgressIndicator(
-                      value: (currentIndex + 1) / letters.length,
+                      value: (currentIndex + 1) / numbers.length,
                       backgroundColor: Colors.grey.shade400,
                       valueColor: const AlwaysStoppedAnimation(Colors.green),
                     ),
@@ -221,11 +207,13 @@ class _LettersScreenState extends State<LettersScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
                         ),
-                        child: Image.network(
-                          imageUrl,
-                          height: 300,
-                          fit: BoxFit.contain,
-                        ),
+                        child: imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                height: 300,
+                                fit: BoxFit.contain,
+                              )
+                            : const Text("لا توجد صورة"),
                       ),
                       const SizedBox(height: 36),
                       Container(
@@ -278,13 +266,13 @@ class _LettersScreenState extends State<LettersScreen> {
   }
 }
 
-class LettersPickerPage extends StatelessWidget {
-  final List<DocumentSnapshot<Map<String, dynamic>>> letters;
+class NumbersPickerPage extends StatelessWidget {
+  final List<DocumentSnapshot<Map<String, dynamic>>> numbers;
   final int currentIndex;
 
-  const LettersPickerPage({
+  const NumbersPickerPage({
     super.key,
-    required this.letters,
+    required this.numbers,
     required this.currentIndex,
   });
 
@@ -294,21 +282,21 @@ class LettersPickerPage extends StatelessWidget {
       backgroundColor: const Color(0xFFE9ECF7),
       appBar: AppBar(
         title: const Text(
-          'قائمة الحروف',
+          'قائمة الأرقام',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Color(0xFF153C64),
+        backgroundColor: const Color(0xFF153C64),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(12),
-        itemCount: letters.length,
+        itemCount: numbers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (context, i) {
-          final data = letters[i].data() ?? {};
-          final letter = (data['letter'] ?? '').toString();
-          final imgUrl = (data['imgletter'] ?? '').toString();
+          final data = numbers[i].data() ?? {};
+          final numberText = (data['Number'] ?? '').toString();
+          final imgUrl = (data['Numberimg'] ?? '').toString();
 
           return InkWell(
             onTap: () => Navigator.pop<int>(context, i),
@@ -328,7 +316,7 @@ class LettersPickerPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    letter,
+                    numberText,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
