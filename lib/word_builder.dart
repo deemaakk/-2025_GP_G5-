@@ -234,7 +234,7 @@ void initState() {
         backgroundColor: const Color(0xFF38598B),
         title: const Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
         content: Text(
-          "لقد أنهيت جميع $_totalRounds الجولات! 👏",
+          "لقد أنهيت جميع $_totalRounds جولات! 👏",
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
@@ -259,24 +259,57 @@ void initState() {
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: Text("شرح اللعبة"),
-        content: RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            style: TextStyle(color: Colors.black, fontSize: 16),
-            children: [
-              TextSpan(text: "قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n- اضغط زر التحقق للتأكد من الإجابة.\n-"),
-              TextSpan(
-                text: "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-              ),
-            ],
+        backgroundColor: const Color(0xFFE7EAF6),
+        title: const Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            "شرح اللعبة",
+            style: TextStyle(
+              color: Color(0xFF113F67),
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end, // Align content to the right
+          children: const [
+            Text(
+              "⭐ قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n"
+              "⭐ اضغط زر التحقق للتأكد من الإجابة.\n"
+              "⭐ اللعبة تتكون من 5 جولات.",
+              textDirection: TextDirection.rtl,
+              style: TextStyle(
+                color: Color(0xFF113F67),
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight, // تنبيه right aligned
+              child: Text(
+                "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها.",
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            child: Text("حسناً"),
             onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              "حسناً",
+              style: TextStyle(
+                color: Color(0xFF113F67),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       );
