@@ -1,22 +1,41 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
-import 'play_withlaweh.dart'; // Correct import
-// ignore: unused_import
-import 'homepage.dart'; // Assuming you have this file
+import 'play_withlaweh.dart';
+import 'homepage.dart';
 
-// ignore: use_key_in_widget_constructors
-class MemoryMatchGameScreen extends StatefulWidget {
+void main() {
+  runApp(const MemoryMatch());
+}
+
+class MemoryMatch extends StatelessWidget {
+  const MemoryMatch({super.key});
+
   @override
-  // ignore: library_private_types_in_public_api
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Memory Match Game',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MemoryMatchGameScreen(),
+    );
+  }
+}
+
+class MemoryMatchGameScreen extends StatefulWidget {
+  const MemoryMatchGameScreen({super.key});
+
+  @override
   _MemoryMatchGameScreenState createState() => _MemoryMatchGameScreenState();
 }
 
 class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   final List<String> _allArabicLetters = [
-    "أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر",
-    "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف",
-    "ق", "ك", "ل", "م", "ن", "ه", "و", "ي"
+    "أ","ب","ت","ث","ج","ح","خ","د","ذ","ر",
+    "ز","س","ش","ص","ض","ط","ظ","ع","غ","ف",
+    "ق","ك","ل","م","ن","ه","و","ي"
   ];
 
   List<String> _shuffledCards = [];
@@ -30,8 +49,13 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: Duration(seconds: 2));
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
     _startNewGame();
+
+    // Show tutorial automatically when the game first loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showIntroDialog();
+    });
   }
 
   @override
@@ -41,8 +65,6 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   }
 
   void _startNewGame() {
-    // ignore: unused_local_variable
-    final random = Random();
     List<String> selectedLetters = List.from(_allArabicLetters)..shuffle();
     selectedLetters = selectedLetters.take(4).toList();
 
@@ -94,10 +116,10 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
 
         if (_matchCount == 4) {
           _confettiController.play();
-          Future.delayed(Duration(milliseconds: 600), () => _showGameOverDialog());
+          Future.delayed(const Duration(milliseconds: 600), () => _showGameOverDialog());
         }
       } else {
-        Future.delayed(Duration(seconds: 1), () {
+        Future.delayed(const Duration(seconds: 1), () {
           setState(() {
             _cardFlips[_flippedIndexes[0]] = false;
             _cardFlips[_flippedIndexes[1]] = false;
@@ -113,16 +135,16 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Color(0xFF38598B),
-        title: Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
-        content: Text("أنهيت اللعبة بنجاح! 🎊", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFF38598B),
+        title: const Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
+        content: const Text("أنهيت اللعبة بنجاح! 🎊", style: TextStyle(color: Colors.white)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _startNewGame();
             },
-            child: Text("🔁 العب مجدداً", style: TextStyle(color: Colors.white)),
+            child: const Text("🔁 العب مجدداً", style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () {
@@ -132,55 +154,87 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                 MaterialPageRoute(builder: (_) => PlayWithLaweh()),
               );
             },
-            child: Text("🔙 العودة إلى القائمة الرئيسية", style: TextStyle(color: Colors.white)),
+            child: const Text("🔙 العودة إلى القائمة الرئيسية", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
+void _showIntroDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFFE7EAF6),
+        title: Align(
+          alignment: Alignment.centerRight, // Right-align the title
+          child: const Text(
+            "شرح اللعبة",
+            style: TextStyle(
+              color: Color(0xFF113F67),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        content: const Text(
+          "⭐ طابق كل حرف عربي مع صورة لغة الإشارة الخاصة به.\n"
+          "⭐ اكشف بطاقتين في كل مرة.\n"
+          "⭐ اجمع كل الأزواج لتربح! 🎉",
+          textDirection: TextDirection.rtl,
+          style: TextStyle(color: Color(0xFF113F67)),
+        ),
+        
+        actionsAlignment: MainAxisAlignment.start,
+actions: [
+  TextButton(
+    child: const Text(
+      "حسناً",
+      style: TextStyle(color: Color(0xFF113F67)),
+    ),
+    onPressed: () => Navigator.of(context).pop(),
+  ),
+],
+
+      );
+    },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: Color(0xFF38598B),
+          backgroundColor: const Color(0xFF38598B),
           appBar: AppBar(
             backgroundColor: Colors.transparent,
-            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => PlayWithLaweh()),
+                );
+              },
+            ),
             actions: [
               IconButton(
-                icon: Icon(Icons.arrow_forward, color: Colors.white),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => PlayWithLaweh()),
-                  );
-                },
+                icon: const Icon(Icons.help_outline, color: Colors.white),
+                onPressed: _showIntroDialog, // Access tutorial anytime
               ),
             ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Center(
-                  child: Text(
-                    "طابق الحرف مع إشارته",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
                 Expanded(
                   child: GridView.builder(
                     itemCount: _shuffledCards.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -188,10 +242,8 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                       return GestureDetector(
                         onTap: () => _flipCard(index),
                         child: Card(
-                          color: Color(0xFFE7EAF6),
-                          child: Center(
-                            child: _buildCardContent(index),
-                          ),
+                          color: const Color(0xFFE7EAF6),
+                          child: Center(child: _buildCardContent(index)),
                         ),
                       );
                     },
@@ -207,7 +259,7 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
             confettiController: _confettiController,
             blastDirectionality: BlastDirectionality.explosive,
             shouldLoop: false,
-            colors: [Colors.white, Colors.amber, Colors.redAccent, Colors.green],
+            colors: const [Colors.white, Colors.amber, Colors.redAccent, Colors.green],
           ),
         ),
       ],
@@ -216,13 +268,13 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
 
   Widget _buildCardContent(int index) {
     return AnimatedSwitcher(
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
       child: _cardFlips[index]
           ? (_shuffledCards[index].contains("assets")
               ? Image.asset(_shuffledCards[index])
               : Text(
                   _shuffledCards[index],
-                  style: TextStyle(fontSize: 24, color: Colors.black),
+                  style: const TextStyle(fontSize: 24, color: Colors.black),
                 ))
           : Image.asset('assets/logo.png'),
     );
