@@ -37,7 +37,6 @@ class MyApp extends StatelessWidget {
 // ignore: use_key_in_widget_constructors
 class WordBuilderGame extends StatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
   _WordBuilderGameState createState() => _WordBuilderGameState();
 }
 
@@ -85,6 +84,10 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
     'لا': 'assets/signs/signs/لا.jpg',
   };
 
+  late List<String> _roundWords;
+  int _currentRound = 1;
+  final int _totalRounds = 5;
+
   String _currentWord = '';
   List<Map<String, String>> _availableLetters = [];
   List<Map<String, String>> _shuffledImages = [];
@@ -93,27 +96,41 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
 
   late ConfettiController _confettiController;
 
-  @override
-  void initState() {
-    super.initState();
-    _confettiController = ConfettiController(duration: Duration(seconds: 2));
-    _startNewRound();
+@override
+void initState() {
+  super.initState();
+  _confettiController = ConfettiController(duration: Duration(seconds: 2));
+  _prepareRounds();
+  _startNewRound();
+
+  // Show tutorial once after the first frame is rendered
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _showTutorial();
+  });
+}
+
+
+  void _prepareRounds() {
+    _roundWords = List.from(_words)..shuffle();
+    _roundWords = _roundWords.take(_totalRounds).toList();
   }
 
   void _startNewRound() {
-    String word = _words[Random().nextInt(_words.length)];
-    _currentWord = word;
+    if (_currentRound > _totalRounds) {
+      _showGameOverDialog();
+      return;
+    }
 
-    _availableLetters = word
+    _currentWord = _roundWords[_currentRound - 1];
+
+    _availableLetters = _currentWord
         .split('')
         .map((letter) => {'letter': letter, 'image': letterImages[letter]!})
         .toList();
-    
-    _shuffledImages = List.from(_availableLetters);
-    _shuffledImages.shuffle();
 
-    _selectedLetters = List.generate(word.length, (index) => '');
-    _letterUsed = List.generate(word.length, (index) => false);
+    _shuffledImages = List.from(_availableLetters)..shuffle();
+    _selectedLetters = List.generate(_currentWord.length, (index) => '');
+    _letterUsed = List.generate(_availableLetters.length, (index) => false);
 
     setState(() {});
   }
@@ -175,15 +192,24 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
       );
     } else if (_selectedLetters.join() == _currentWord) {
       _confettiController.play();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Text("أحسنت! إجابة صحيحة ✅"),
+      if (_currentRound < _totalRounds) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text("أحسنت! إجابة صحيحة ✅"),
+            ),
           ),
-        ),
-      );
-      Future.delayed(Duration(seconds: 1), _startNewRound);
+        );
+        Future.delayed(Duration(seconds: 1), () {
+          setState(() {
+            _currentRound++;
+          });
+          _startNewRound();
+        });
+      } else {
+        _showGameOverDialog();
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -196,11 +222,68 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
       setState(() {
         _selectedLetters = List.generate(_currentWord.length, (index) => '');
         _letterUsed = List.generate(_availableLetters.length, (index) => false);
-        _shuffledImages = List.from(_availableLetters);
-        _shuffledImages.shuffle();
+        _shuffledImages = List.from(_availableLetters)..shuffle();
       });
     }
   }
+
+  void _showGameOverDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF38598B),
+        title: const Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
+        content: Text(
+          "لقد أنهيت جميع $_totalRounds جولات! 👏",
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _currentRound = 1;
+                _prepareRounds();
+              });
+              _startNewRound();
+            },
+            child: const Text("🔁 ابدأ من جديد", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+ void _showTutorial() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("شرح اللعبة"),
+        content: RichText(
+          textDirection: TextDirection.rtl,
+          text: TextSpan(
+            style: TextStyle(color: Colors.black, fontSize: 16),
+            children: [
+              TextSpan(text: "قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n- اضغط زر التحقق للتأكد من الإجابة.\n"),
+              TextSpan(
+                text: "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها",
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: Text("حسناً"),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   @override
   void dispose() {
@@ -218,6 +301,10 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
+            icon: Icon(Icons.help_outline),
+            onPressed: _showTutorial,
+          ),
+          IconButton(
             icon: Icon(Icons.arrow_forward),
             onPressed: () {
               Navigator.pushReplacement(
@@ -226,10 +313,6 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-          
-          ),
         ],
       ),
       body: Padding(
@@ -237,6 +320,10 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Text(
+              'الجولة $_currentRound من $_totalRounds',
+              style: TextStyle(fontSize: 20, color: Colors.black54),
+            ),
             SizedBox(height: 20),
             Text(
               'رتب حروف لغة الإشارة لتكوين الكلمة الصحيحة',
@@ -247,7 +334,7 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 80),
+            SizedBox(height: 40),
             Text(
               _currentWord,
               style: TextStyle(
@@ -264,7 +351,6 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
               children: _shuffledImages.map((item) {
                 return Draggable<String>(
                   data: item['letter']!,
-                  // ignore: sort_child_properties_last
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.asset(
@@ -286,21 +372,19 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
                       ),
                     ),
                   ),
-                  // ignore: sized_box_for_whitespace
                   childWhenDragging: Container(width: 80, height: 80),
                 );
               }).toList(),
             ),
             SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: List.generate(_currentWord.length, (index) {
                 return DragTarget<String>(
-                  // ignore: deprecated_member_use
                   onAccept: (letter) => _onLetterSelected(index, letter),
-                  // ignore: deprecated_member_use
                   onWillAccept: (data) => true,
-                  onLeave: (data) {},
                   builder: (context, candidateData, rejectedData) {
                     return GestureDetector(
                       onTap: () => _removeLetter(index),
@@ -308,12 +392,9 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
                         duration: Duration(milliseconds: 300),
                         width: 80,
                         height: 80,
-                        margin: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: candidateData.isNotEmpty
-                                ? Colors.blue
-                                : Colors.grey,
+                            color: candidateData.isNotEmpty ? Colors.blue : Colors.grey,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           color: Colors.grey[200],
@@ -337,7 +418,7 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
                 );
               }),
             ),
-            SizedBox(height: 80),
+            SizedBox(height: 40),
             ElevatedButton(
               onPressed: _checkAnswer,
               style: ElevatedButton.styleFrom(
@@ -349,10 +430,7 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
               ),
               child: Text(
                 'تحقق من الإجابة',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 20, color: Colors.white),
               ),
             ),
           ],
