@@ -234,7 +234,7 @@ void initState() {
         backgroundColor: const Color(0xFF38598B),
         title: const Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
         content: Text(
-          "لقد أنهيت جميع $_totalRounds جولات! 👏",
+          "لقد أنهيت جميع $_totalRounds الجولات! 👏",
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
@@ -265,7 +265,7 @@ void initState() {
           text: TextSpan(
             style: TextStyle(color: Colors.black, fontSize: 16),
             children: [
-              TextSpan(text: "قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n- اضغط زر التحقق للتأكد من الإجابة.\n"),
+              TextSpan(text: "قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n- اضغط زر التحقق للتأكد من الإجابة.\n-"),
               TextSpan(
                 text: "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها",
                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
