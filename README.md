@@ -23,36 +23,15 @@ By combining cutting-edge AI technology with user-centered design, Laّweh empow
 ## Getting Started
 Follow these steps to run Laّweh on your machine:
 
-Access the Repository
-Visit the GitHub repository: Laّweh Project Repository
+- Visit the GitHub repository: Laّweh Project Repository
 Download or Clone
 
-Click on Code and select Download ZIP, or
-Clone directly via terminal:
+- Click on Code and select Download ZIP
+- Open in VS Code
+- Launch Visual Studio Code
+- Select File > Open Folder and navigate to the project directory
+- Install Flutter Packages
+- Connect an Android device or launch an emulator
 
 
-
-bash     git clone https://github.com/deemaakk/-2025_GP_G5-.git
-
-Open in VS Code
-
-Launch Visual Studio Code
-Select File > Open Folder and navigate to the project directory
-
-
-Install Flutter Packages
-Run the following command in the integrated terminal:
-
-bash   flutter pub get
-
-Set Up Firebase
-Ensure the google-services.json file is correctly placed inside android/app/
-Launch the App
-
-Connect an Android device or launch an emulator
-Execute:
-
-
-
-bash     flutter run
 You're all set! Laّweh is now ready to use. Explore the features and experience accessible communication.
