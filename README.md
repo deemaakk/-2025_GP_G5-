@@ -1,6 +1,6 @@
 <img width="393" height="335" alt="image" src="https://github.com/user-attachments/assets/8a0c61f2-e97c-4432-9239-a734b2522a65" />
 
-# Laّweh
+# Laّweh لوّح
 
 ## Introduction
 Laّweh is an innovative mobile application powered by artificial intelligence, created to support the deaf and hard-of-hearing community across Arabic-speaking regions. Recognizing the communication barriers faced by over 229,000 individuals with hearing impairments in Saudi Arabia alone, Laّweh provides practical solutions that promote inclusivity and accessibility.
