@@ -23,15 +23,14 @@ By combining cutting-edge AI technology with user-centered design, Laّweh empow
 ## Getting Started
 Follow these steps to run Laّweh on your machine:
 
-- Visit the GitHub repository: Laّweh Project Repository
-Download or Clone
-
-- Click on Code and select Download ZIP
-- Open in VS Code
-- Launch Visual Studio Code
-- Select File > Open Folder and navigate to the project directory
-- Install Flutter Packages
-- Connect an Android device or launch an emulator
+- Visit the Laّweh repository on GitHub.
+- Click the Code button and download the .zip file.
+- Extract the .zip file.
+- Open the terminal and run flutter pub get to install dependencies.
+- Open the project in Visual Studio Code.
+- Go to File > Open and locate the extracted project folder.
+- Use an Android Emulator or connect a real Android device.
+- Run the Laّweh application.
 
 
 You're all set! Laّweh is now ready to use. Explore the features and experience accessible communication.
