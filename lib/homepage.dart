@@ -1,3 +1,4 @@
+// homepage.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -28,7 +29,7 @@ class _HomePageState extends State<HomePage> {
   late VideoPlayerController _videoController;
   List<Widget> _banners = [];
 
-  String? userName;
+String? userName;
 
   @override
   void initState() {
@@ -73,46 +74,61 @@ class _HomePageState extends State<HomePage> {
       // ignore: avoid_print
       print('⚠️ UID غير موجود');
     }
-
+        
     // ignore: avoid_print
     print('🎬 جاري تهيئة الفيديو');
-    _videoController = VideoPlayerController.asset('assets/startNowBanner.mp4')
-      ..initialize().then((_) {
-        // ignore: avoid_print
-        print('✅ تم تحميل الفيديو');
+   // أولاً: نحط البنرات الصور كـ fallback أساسي
+_banners = [
+  ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: Image.asset(
+      'assets/banner2.jpg',
+      fit: BoxFit.cover,
+    ),
+  ),
+  ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: Image.asset(
+      'assets/banner3.jpg',
+      fit: BoxFit.cover,
+    ),
+  ),
+];
 
-        setState(() {
-          _videoController.setLooping(true);
-          _videoController.setVolume(0);
-          _videoController.play();
+// بعدين نحاول نضيف الفيديو فوقهم لو اشتغل
+_videoController =
+    VideoPlayerController.asset('assets/startNowBanner.mp4');
 
-          _banners = [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: AspectRatio(
-                aspectRatio: _videoController.value.aspectRatio,
-                child: VideoPlayer(_videoController),
-              ),
-            ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset('assets/banner2.jpg', fit: BoxFit.cover),
-            ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset('assets/banner3.jpg', fit: BoxFit.cover),
-            ),
-          ];
-        });
-      }).catchError((error) {
-        // ignore: avoid_print
-        print('❌ خطأ في تحميل الفيديو: $error');
-      });
+_videoController.initialize().then((_) {
+  if (!mounted) return;
+
+  _videoController
+    ..setLooping(true)
+    ..setVolume(0)
+    ..play();
+
+  setState(() {
+    _banners.insert(
+      0,
+      ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AspectRatio(
+          aspectRatio: _videoController.value.aspectRatio,
+          child: VideoPlayer(_videoController),
+        ),
+      ),
+    );
+  });
+}).catchError((error) {
+  // لو فشل، ما نسوي شيء، الصور جاهزة أصلاً
+});
+
 
     // ignore: avoid_print
     print('⏱️ بدء المؤقت لعرض البانرات');
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_banners.isNotEmpty) {
+        if (!mounted) return;
         setState(() {
           _currentPage = (_currentPage + 1) % _banners.length;
         });
@@ -149,7 +165,8 @@ class _HomePageState extends State<HomePage> {
       case 1:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const EducationCategoryScreen()),
+          MaterialPageRoute(
+              builder: (_) => const EducationCategoryScreen()),
         );
         break;
       case 2:
@@ -222,43 +239,50 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         child: _banners.isEmpty
-                            ? const Center(child: CircularProgressIndicator())
+                            ? const Center(
+                            child: CircularProgressIndicator())
                             : PageView.builder(
-                                controller: _pageController,
-                                itemCount: _banners.length,
-                                itemBuilder: (context, index) =>
-                                    _banners[index],
-                              ),
+                          controller: _pageController,
+                          itemCount: _banners.length,
+                          itemBuilder: (context, index) =>
+                          _banners[index],
+                        ),
                       ),
                       const SizedBox(height: 10),
                       if (_banners.isNotEmpty)
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
                           children: List.generate(
                             _banners.length,
-                            (index) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: _currentPage == index ? 10 : 6,
+                                (index) => Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 3),
+                              width:
+                              _currentPage == index ? 10 : 6,
                               height: 6,
                               decoration: BoxDecoration(
                                 color: _currentPage == index
                                     ? Colors.blueAccent
                                     : Colors.grey[400],
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius:
+                                BorderRadius.circular(3),
                               ),
                             ),
                           ),
                         ),
                       const SizedBox(height: 30),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                         children: [
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const CorrectMeApp(),
+                                  builder: (context) =>
+                                  const CorrectMeApp(),
                                 ),
                               );
                             },
@@ -272,7 +296,8 @@ class _HomePageState extends State<HomePage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ArticlesPage(),
+                                  builder: (context) =>
+                                      ArticlesPage(),
                                 ),
                               );
                             },
@@ -289,11 +314,13 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => PlayWithLaweh()),
+                                builder: (context) =>
+                                    PlayWithLaweh()),
                           );
                         },
                         child: const HomeFeatureButton(
-                          icon: FontAwesomeIcons.bookOpenReader,
+                          icon:
+                          FontAwesomeIcons.bookOpenReader,
                           label: 'العب مع لوّح',
                           fullWidth: true,
                         ),
@@ -384,12 +411,18 @@ class _AnimatedWaveHandState extends State<AnimatedWaveHand>
     );
 
     _rotation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: 0.3), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 0.3, end: -0.3), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -0.3, end: 0.2), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 0.2, end: -0.1), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -0.1, end: 0), weight: 1),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      TweenSequenceItem(
+          tween: Tween(begin: 0, end: 0.3), weight: 1),
+      TweenSequenceItem(
+          tween: Tween(begin: 0.3, end: -0.3), weight: 1),
+      TweenSequenceItem(
+          tween: Tween(begin: -0.3, end: 0.2), weight: 1),
+      TweenSequenceItem(
+          tween: Tween(begin: 0.2, end: -0.1), weight: 1),
+      TweenSequenceItem(
+          tween: Tween(begin: -0.1, end: 0), weight: 1),
+    ]).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   void _startWaving() {

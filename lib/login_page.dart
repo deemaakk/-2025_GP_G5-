@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'resetpassword_page.dart';
-// ignore: unused_import
-import 'welcome.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -13,22 +12,49 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool _isLoading = false;
 
   Future<void> _login() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // ignore: unused_local_variable
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      // ignore: use_build_context_synchronously
-      Navigator.pushNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      showDialog(
+
+      Future.microtask(() {
         // ignore: use_build_context_synchronously
+        Navigator.pushReplacementNamed(context, '/home');
+      });
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'البريد الالكتروني او كلمة المرور غير صحيحة';
+
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني';
+          break;
+        case 'wrong-password':
+          errorMessage = 'كلمة المرور غير صحيحة';
+          break;
+        case 'invalid-email':
+          errorMessage = 'صيغة البريد الإلكتروني غير صحيحة';
+          break;
+      }
+
+      if (!mounted) return;
+
+      showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('حدث خطأ'),
-          content: Text(e.message ?? 'حدث خطأ غير معروف'),
+        builder: (_) => AlertDialog(
+          title: const Text('خطأ'),
+          content: Text(errorMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -37,6 +63,18 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       );
+    } catch (e) {
+      // في حال أي خطأ غير متوقع من الباكج
+      debugPrint("Ignored plugin error after login: $e");
+
+      Future.microtask(() {
+        // ignore: use_build_context_synchronously
+        Navigator.pushReplacementNamed(context, '/home');
+      });
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -59,80 +97,70 @@ class _LoginPageState extends State<LoginPage> {
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Tajawal',
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
 
-              // حقل البريد الإلكتروني
-       
-const SizedBox(height: 8),
-TextField(
-  controller: emailController,
-  decoration: const InputDecoration(
-    hintText: 'أدخل بريدك الإلكتروني',
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
-    hintStyle: TextStyle(
-      fontFamily: 'Tajawal',
-      fontSize: 14,
-      color: Colors.grey,
-    ),
-  ),
-  textAlign: TextAlign.right,
-
-),
-
+              // حقل الإيميل
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  hintText: 'أدخل بريدك الإلكتروني',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                ),
+                textAlign: TextAlign.right,
+              ),
 
               const SizedBox(height: 12),
 
               // حقل كلمة المرور
-            
-const SizedBox(height: 8),
-TextField(
-  controller: passwordController,
-  obscureText: true,
-  decoration: const InputDecoration(
-    hintText: 'أدخل كلمة المرور',
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(12)),
-    ),
-    hintStyle: TextStyle(
-      fontFamily: 'Tajawal',
-      fontSize: 14,
-      color: Colors.grey,
-    ),
-  ),
-  textAlign: TextAlign.right,
-),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'أدخل كلمة المرور',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                ),
+                textAlign: TextAlign.right,
+              ),
 
               const SizedBox(height: 24),
 
+              // زر تسجيل الدخول مع اللودينق من الكود الأول
               ElevatedButton(
-                onPressed: _login,
+                onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F2D52),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 64),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 64,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'تسجيل الدخول',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Tajawal',
-                    color: Colors.white,
-                    
-                  ),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'تسجيل الدخول',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
               ),
+
               const SizedBox(height: 16),
 
+              // 👇 الجزء المأخوذ من الكود الثاني (إنشاء حساب + نسيت كلمة المرور)
               Column(
                 children: [
                   const SizedBox(height: 8),
@@ -168,7 +196,7 @@ TextField(
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ResetPasswordPage(), 
+                          builder: (context) => const ResetPasswordPage(),
                         ),
                       );
                     },

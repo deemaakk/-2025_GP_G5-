@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'articles_details_page.dart';
 import 'homepage.dart';
 import 'education_category.dart';
@@ -17,37 +18,70 @@ class ArticlesPage extends StatefulWidget {
 }
 
 class _ArticlesPageState extends State<ArticlesPage> {
-  final CollectionReference articlesRef = FirebaseFirestore.instance.collection('Articles');
+  final CollectionReference articlesRef =
+      FirebaseFirestore.instance.collection('Articles');
   final TextEditingController searchController = TextEditingController();
   String searchText = '';
   bool sortDescending = true;
   late bool showSavedOnly;
   // ignore: prefer_final_fields
   int _selectedIndex = 3;
+  List<String> savedArticleIds = [];
 
   @override
   void initState() {
     super.initState();
     showSavedOnly = widget.initialShowSaved;
+    fetchSavedArticles();
+  }
+
+  Future<void> fetchSavedArticles() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('UserAccount')
+        .doc(user.uid)
+        .collection('SavedArticles')
+        .get();
+
+    setState(() {
+      savedArticleIds = snapshot.docs.map((doc) => doc.id).toList();
+    });
   }
 
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
     switch (index) {
       case 0:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
         break;
       case 1:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const EducationCategoryScreen()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const EducationCategoryScreen()),
+        );
         break;
       case 2:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const TranslationScreen()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TranslationScreen()),
+        );
         break;
       case 3:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ArticlesPage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ArticlesPage()),
+        );
         break;
       case 4:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AccountSettingsPage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
+        );
         break;
     }
   }
@@ -100,14 +134,20 @@ class _ArticlesPageState extends State<ArticlesPage> {
           elevation: 0,
           automaticallyImplyLeading: false,
           leading: IconButton(
-            icon: Icon(showSavedOnly ? Icons.bookmark : Icons.bookmark_border, color: Colors.white),
+            icon: Icon(
+              showSavedOnly ? Icons.bookmark : Icons.bookmark_border,
+              color: Colors.white,
+            ),
             onPressed: () {
               setState(() {
                 showSavedOnly = !showSavedOnly;
               });
             },
           ),
-          title: const Text("المقالات", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          title: const Text(
+            "المقالات",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           centerTitle: true,
         ),
         body: Column(
@@ -139,8 +179,14 @@ class _ArticlesPageState extends State<ArticlesPage> {
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: articlesRef.orderBy("ArticleDate", descending: sortDescending).snapshots(),
+                stream: articlesRef
+                    .orderBy("ArticleDate", descending: sortDescending)
+                    .snapshots(),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("حدث خطأ في تحميل المقالات"));
+                  }
+
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -148,8 +194,18 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   final docs = snapshot.data!.docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final subject = data['ArticleSubject'] ?? '';
-                    final matchesSearch = subject.toString().contains(RegExp(searchText, caseSensitive: false));
-                    final matchesSave = !showSavedOnly || (data['ArticleSave'] == true);
+
+                    // ✅ بحث آمن وبسيط (بدون RegExp)
+                    final matchesSearch = searchText.isEmpty
+                        ? true
+                        : subject
+                            .toString()
+                            .toLowerCase()
+                            .contains(searchText.toLowerCase());
+
+                    final isSaved = savedArticleIds.contains(doc.id);
+                    final matchesSave = !showSavedOnly || isSaved;
+
                     return matchesSearch && matchesSave;
                   }).toList();
 
@@ -162,16 +218,18 @@ class _ArticlesPageState extends State<ArticlesPage> {
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final doc = docs[index];
-                      final imageUrl = doc['Articleimg'];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final imageUrl = data['Articleimg'];
 
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ArticleDetailsPage(articleData: doc),
+                              builder: (_) =>
+                                  ArticleDetailsPage(articleData: doc),
                             ),
-                          );
+                          ).then((_) => fetchSavedArticles());
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -179,7 +237,12 @@ class _ArticlesPageState extends State<ArticlesPage> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 6)],
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200,
+                                blurRadius: 6,
+                              ),
+                            ],
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,13 +254,15 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                   borderRadius: BorderRadius.circular(8),
                                   color: Colors.grey.shade200,
                                 ),
-                                child: imageUrl != null && imageUrl.toString().isNotEmpty
+                                child: imageUrl != null &&
+                                        imageUrl.toString().isNotEmpty
                                     ? ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
                                         child: Image.network(
                                           imageUrl,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
                                             return buildStaticArticleImage();
                                           },
                                         ),
@@ -210,7 +275,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      doc['ArticleSubject'],
+                                      data['ArticleSubject'] ?? '',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -220,10 +285,15 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                       maxLines: 2,
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      formatArabicDate((doc['ArticleDate'] as Timestamp).toDate()),
-                                      style: const TextStyle(color: Color(0xFF38598B)),
-                                    ),
+                                    if (data['ArticleDate'] != null)
+                                      Text(
+                                        formatArabicDate(
+                                          (data['ArticleDate'] as Timestamp)
+                                              .toDate(),
+                                        ),
+                                        style: const TextStyle(
+                                            color: Color(0xFF38598B)),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -267,7 +337,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
     const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 
-    final formatted = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    final formatted =
+        '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     String arabicFormatted = formatted;
     for (int i = 0; i < western.length; i++) {
       arabicFormatted = arabicFormatted.replaceAll(western[i], eastern[i]);

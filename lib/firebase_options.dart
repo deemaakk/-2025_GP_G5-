@@ -35,43 +35,44 @@ class DefaultFirebaseOptions {
     messagingSenderId: '906512269675',
     projectId: 'laweh-da92d',
     authDomain: 'laweh-da92d.firebaseapp.com',
-    storageBucket: 'laweh-da92d.appspot.com', 
+    storageBucket: 'laweh-da92d.firebasestorage.app',
     measurementId: 'G-RG2D0LJMW4',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM',
-    appId: '1:906512269675:android:ba1df08fc949a1c5becc2e',
+    appId: '1:906512269675:android:4f8e6bd95fdcbb11becc2e',
     messagingSenderId: '906512269675',
     projectId: 'laweh-da92d',
-    storageBucket: 'laweh-da92d.appspot.com', 
+    storageBucket: 'laweh-da92d.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA3eetqGlQjhKvY2JIngRONE8fqmydjvLY',
-    appId: '1:906512269675:ios:077f52ef236f4360becc2e',
+    appId: '1:906512269675:ios:040ab6a29345a4dfbecc2e',
     messagingSenderId: '906512269675',
     projectId: 'laweh-da92d',
-    storageBucket: 'laweh-da92d.appspot.com',
-    iosBundleId: 'com.example.laweh',
+    storageBucket: 'laweh-da92d.firebasestorage.app',
+    iosBundleId: 'com.example.lawehApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA3eetqGlQjhKvY2JIngRONE8fqmydjvLY',
-    appId: '1:906512269675:ios:077f52ef236f4360becc2e',
+    appId: '1:906512269675:ios:040ab6a29345a4dfbecc2e',
     messagingSenderId: '906512269675',
     projectId: 'laweh-da92d',
-    storageBucket: 'laweh-da92d.appspot.com',
-    iosBundleId: 'com.example.laweh',
+    storageBucket: 'laweh-da92d.firebasestorage.app',
+    iosBundleId: 'com.example.lawehApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBoyHuTc3UZGxfEfmGa3se4uYxgMFGgZCo',
-    appId: '1:906512269675:web:b499799d78c32f91becc2e',
+    appId: '1:906512269675:web:50aa8713c781ad98becc2e',
     messagingSenderId: '906512269675',
     projectId: 'laweh-da92d',
     authDomain: 'laweh-da92d.firebaseapp.com',
-    storageBucket: 'laweh-da92d.appspot.com',
-    measurementId: 'G-154K23LX76',
+    storageBucket: 'laweh-da92d.firebasestorage.app',
+    measurementId: 'G-Z5CP0EPLJL',
   );
+
 }

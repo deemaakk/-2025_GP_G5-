@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import ' quiz_service_with_images.dart';
-
+import 'quiz_service_with_images.dart';
 import 'result_page.dart';
 
 class ChatPage extends StatefulWidget {

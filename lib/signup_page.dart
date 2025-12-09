@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// ignore: unused_import
-import 'package:fluttermoji/fluttermoji.dart';
-import 'package:laweh_app/homepage.dart';
-// ignore: unused_import
-import 'welcome.dart';
-// ignore: unused_import
-import 'package:image_picker/image_picker.dart';
+import 'homepage.dart';
 
 class SignUpPage extends StatefulWidget {
   // ignore: use_super_parameters
@@ -28,63 +22,7 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final username = usernameController.text.trim();
-
-    try {
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      await userCredential.user!.updateDisplayName(username);
-
-      final String defaultAvatarPath = 'assets/default.png';
-
-      await FirebaseFirestore.instance
-          .collection('UserAccount')
-          .doc(userCredential.user!.uid)
-          .set({
-        'Name': username,
-        'email': email,
-        'uid': userCredential.user!.uid,
-        'created_time': Timestamp.now(),
-        'customAvatar': defaultAvatarPath,
-      });
-
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (e) {
-      _showError(e.message ?? 'حدث خطأ غير متوقع');
-    } catch (e) {
-      _showError('حدث خطأ أثناء التسجيل: $e');
-    }
-  }
-
-  void _showError(String message) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('خطأ'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('حسنًا'),
-          )
-        ],
-      ),
-    );
-  }
+  // ------------------ VALIDATION ------------------
 
   String? _validateUsername(String? value) {
     if (value == null || value.isEmpty) return 'الرجاء إدخال اسم المستخدم';
@@ -93,8 +31,17 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'الرجاء إدخال البريد الإلكتروني';
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value)) return 'البريد الإلكتروني غير صالح';
+    if (value == null || value.trim().isEmpty) {
+      return 'الرجاء إدخال البريد الإلكتروني';
+    }
+
+    final emailRegex =
+        RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$'); // صيغة بريد صحيحة
+
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'صيغة البريد الإلكتروني غير صحيحة';
+    }
+
     return null;
   }
 
@@ -112,6 +59,119 @@ class _SignUpPageState extends State<SignUpPage> {
     return null;
   }
 
+  // ------------------ REGISTER (المعدل) ------------------
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final username = usernameController.text.trim();
+
+    try {
+      // 1) إنشاء المستخدم في Auth
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // نحاول نأخذ الـ user من النتيجة، ولو صارت مشكلة غريبة
+      // نرجع لـ currentUser كخطة بديلة
+      User? user = userCredential.user ?? FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User is null بعد التسجيل!');
+      }
+
+      // 2) تحديث displayName
+      await user.updateDisplayName(username);
+
+      // 3) إنشاء الوثيقة في Firestore داخل UserAccount
+      await FirebaseFirestore.instance
+          .collection('UserAccount')
+          .doc(user.uid)
+          .set({
+        'Name': username,
+        'email': email,
+        'uid': user.uid,
+        'created_time': Timestamp.now(),
+        'customAvatar': 'assets/default.png',
+      });
+
+      // 4) لو كل شيء تمام → ننتقل للهوم
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      // أخطاء إنشاء المستخدم (الإيميل مستخدم، الباسورد ضعيف، ..)
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+      String msg;
+      if (e.code == 'email-already-in-use') {
+        msg = 'هذا البريد مستخدم مسبقًا، سجلي دخول أو استخدمي بريدًا آخر.';
+      } else if (e.code == 'weak-password') {
+        msg = 'كلمة المرور ضعيفة، اختاري كلمة أقوى.';
+      } else {
+        msg = e.message ?? 'حدث خطأ أثناء إنشاء الحساب.';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } on FirebaseException catch (e) {
+      // أخطاء Firestore أو Firebase عامة (rules, network, appcheck...)
+      debugPrint('FirebaseException: ${e.code} - ${e.message}');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'خطأ في حفظ بيانات المستخدم: ${e.message ?? 'حاولي مرة أخرى.'}',
+          ),
+        ),
+      );
+    } catch (e) {
+      // هنا نمسك الأخطاء الغريبة مثل PigeonUserDetails
+      debugPrint('Unexpected error in signup: $e');
+
+      // خطة بديلة: لو المستخدم انشأ فعلاً في Auth، نضيفه يدويًا في UserAccount
+      try {
+        final current = FirebaseAuth.instance.currentUser;
+        if (current != null) {
+          await FirebaseFirestore.instance
+              .collection('UserAccount')
+              .doc(current.uid)
+              .set({
+            'Name': usernameController.text.trim(),
+            'email': current.email ?? emailController.text.trim(),
+            'uid': current.uid,
+            'created_time': Timestamp.now(),
+            'customAvatar': 'assets/default.png',
+          });
+
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+          return; // لا نكمل للسنackbar العامة
+        }
+      } catch (e2) {
+        debugPrint('Fallback Firestore error: $e2');
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('حدث خطأ غير متوقع أثناء عملية التسجيل'),
+        ),
+      );
+    }
+  }
+
+  // ------------------ UI ------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,10 +182,10 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset('assets/logo.png', height: 100),
                 const SizedBox(height: 24),
+
                 const Text(
                   'إنشاء حساب',
                   style: TextStyle(
@@ -133,54 +193,71 @@ class _SignUpPageState extends State<SignUpPage> {
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Tajawal',
                   ),
-                  textAlign: TextAlign.center,
                 ),
+
                 const SizedBox(height: 32),
-                _buildTextField('اسم المستخدم', controller: usernameController, validator: _validateUsername),
+
+                _buildTextField(
+                  'اسم المستخدم',
+                  controller: usernameController,
+                  validator: _validateUsername,
+                ),
                 const SizedBox(height: 12),
-                _buildTextField('البريد الإلكتروني', controller: emailController, validator: _validateEmail),
+
+                _buildTextField(
+                  'البريد الإلكتروني',
+                  controller: emailController,
+                  validator: _validateEmail,
+                ),
                 const SizedBox(height: 12),
-                _buildTextField('كلمة المرور', isPassword: true, controller: passwordController, validator: _validatePassword),
+
+                _buildTextField(
+                  'كلمة المرور',
+                  controller: passwordController,
+                  isPassword: true,
+                  validator: _validatePassword,
+                ),
                 const SizedBox(height: 12),
-                _buildTextField('تأكيد كلمة المرور', isPassword: true, controller: confirmPasswordController, validator: _validateConfirmPassword),
+
+                _buildTextField(
+                  'تأكيد كلمة المرور',
+                  controller: confirmPasswordController,
+                  isPassword: true,
+                  validator: _validateConfirmPassword,
+                ),
+
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   onPressed: _register,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F2D52),
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 64),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 64,
                     ),
                   ),
                   child: const Text(
                     'إنشاء حساب',
                     style: TextStyle(
                       fontSize: 16,
-                      fontFamily: 'Tajawal',
                       color: Colors.white,
+                      fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('هل لديك حساب؟ ', style: TextStyle(fontFamily: 'Tajawal')),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/login');
-                      },
-                      child: const Text(
-                        'تسجيل الدخول',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
+
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/login'),
+                  child: const Text(
+                    'لديك حساب؟ تسجيل الدخول',
+                    style: TextStyle(
+                      decoration: TextDecoration.underline,
+                      fontFamily: 'Tajawal',
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -190,42 +267,38 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildTextField(String hint,
-      {bool isPassword = false,
-      required TextEditingController controller,
-      String? Function(String?)? validator}) {
-    bool isConfirmPassword = controller == confirmPasswordController;
-    bool obscure = isPassword
-        ? (isConfirmPassword ? _obscureConfirmPassword : _obscurePassword)
-        : false;
+  Widget _buildTextField(
+    String hint, {
+    required TextEditingController controller,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+  }) {
+    bool isConfirmField = controller == confirmPasswordController;
 
     return TextFormField(
       controller: controller,
-      obscureText: obscure,
+      obscureText: isPassword
+          ? (isConfirmField ? _obscureConfirmPassword : _obscurePassword)
+          : false,
       validator: validator,
+      textAlign: TextAlign.right,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          fontFamily: 'Tajawal',
-          fontSize: 14,
-          color: Colors.grey,
-        ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.black), 
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  obscure ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+                  (isConfirmField
+                          ? _obscureConfirmPassword
+                          : _obscurePassword)
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
-                    if (isConfirmPassword) {
+                    if (isConfirmField) {
                       _obscureConfirmPassword = !_obscureConfirmPassword;
                     } else {
                       _obscurePassword = !_obscurePassword;
@@ -235,8 +308,6 @@ class _SignUpPageState extends State<SignUpPage> {
               )
             : null,
       ),
-      textDirection: TextDirection.rtl,
-      textAlign: TextAlign.right,
     );
   }
 }

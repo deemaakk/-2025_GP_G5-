@@ -13,11 +13,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      locale: Locale('ar', 'AE'),
-      supportedLocales: [
+      locale: const Locale('ar', 'AE'),
+      supportedLocales: const [
         Locale('ar', 'AE'),
       ],
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -96,19 +96,18 @@ class _WordBuilderGameState extends State<WordBuilderGame> {
 
   late ConfettiController _confettiController;
 
-@override
-void initState() {
-  super.initState();
-  _confettiController = ConfettiController(duration: Duration(seconds: 2));
-  _prepareRounds();
-  _startNewRound();
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 2));
+    _prepareRounds();
+    _startNewRound();
 
-  // Show tutorial once after the first frame is rendered
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _showTutorial();
-  });
-}
-
+    // Show tutorial once after the first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showTutorial();
+    });
+  }
 
   void _prepareRounds() {
     _roundWords = List.from(_words)..shuffle();
@@ -125,12 +124,15 @@ void initState() {
 
     _availableLetters = _currentWord
         .split('')
-        .map((letter) => {'letter': letter, 'image': letterImages[letter]!})
+        .map((letter) => {
+              'letter': letter,
+              'image': letterImages[letter]!,
+            })
         .toList();
 
     _shuffledImages = List.from(_availableLetters)..shuffle();
-    _selectedLetters = List.generate(_currentWord.length, (index) => '');
-    _letterUsed = List.generate(_availableLetters.length, (index) => false);
+    _selectedLetters = List.filled(_currentWord.length, '');
+    _letterUsed = List.filled(_availableLetters.length, false);
 
     setState(() {});
   }
@@ -162,7 +164,9 @@ void initState() {
     if (_selectedLetters[index].isNotEmpty) {
       String letter = _selectedLetters[index];
       int firstUnusedIndex = _availableLetters.indexWhere(
-        (item) => item['letter'] == letter && !_letterUsed[_availableLetters.indexOf(item)]
+        (item) =>
+            item['letter'] == letter &&
+            !_letterUsed[_availableLetters.indexOf(item)],
       );
 
       if (firstUnusedIndex != -1) {
@@ -183,7 +187,7 @@ void initState() {
   void _checkAnswer() {
     if (_selectedLetters.contains('')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Directionality(
             textDirection: TextDirection.rtl,
             child: Text("رتب حروف لغة الإشارة في الأماكن المناسبة"),
@@ -191,17 +195,18 @@ void initState() {
         ),
       );
     } else if (_selectedLetters.join() == _currentWord) {
+      // ✅ الآن الترتيب الداخلي = نفس ترتيب الكلمة (من اليمين لليسار من ناحية القراءة)
       _confettiController.play();
       if (_currentRound < _totalRounds) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Directionality(
               textDirection: TextDirection.rtl,
               child: Text("أحسنت! إجابة صحيحة ✅"),
             ),
           ),
         );
-        Future.delayed(Duration(seconds: 1), () {
+        Future.delayed(const Duration(seconds: 1), () {
           setState(() {
             _currentRound++;
           });
@@ -212,7 +217,7 @@ void initState() {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Directionality(
             textDirection: TextDirection.rtl,
             child: Text("إجابة غير صحيحة، حاول مرة أخرى ❌"),
@@ -220,8 +225,8 @@ void initState() {
         ),
       );
       setState(() {
-        _selectedLetters = List.generate(_currentWord.length, (index) => '');
-        _letterUsed = List.generate(_availableLetters.length, (index) => false);
+        _selectedLetters = List.filled(_currentWord.length, '');
+        _letterUsed = List.filled(_availableLetters.length, false);
         _shuffledImages = List.from(_availableLetters)..shuffle();
       });
     }
@@ -232,7 +237,10 @@ void initState() {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF38598B),
-        title: const Text("🎉 أحسنت!", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "🎉 أحسنت!",
+          style: TextStyle(color: Colors.white),
+        ),
         content: Text(
           "لقد أنهيت جميع $_totalRounds جولات! 👏",
           style: const TextStyle(color: Colors.white),
@@ -247,76 +255,78 @@ void initState() {
               });
               _startNewRound();
             },
-            child: const Text("🔁 ابدأ من جديد", style: TextStyle(color: Colors.white)),
+            child: const Text(
+              "🔁 ابدأ من جديد",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
- void _showTutorial() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        backgroundColor: const Color(0xFFE7EAF6),
-        title: const Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            "شرح اللعبة",
-            style: TextStyle(
-              color: Color(0xFF113F67),
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end, // Align content to the right
-          children: const [
-            Text(
-              "⭐ قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n"
-              "⭐ اضغط زر التحقق للتأكد من الإجابة.\n"
-              "⭐ اللعبة تتكون من 5 جولات.",
-              textDirection: TextDirection.rtl,
+  void _showTutorial() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFE7EAF6),
+          title: const Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              "شرح اللعبة",
               style: TextStyle(
                 color: Color(0xFF113F67),
-                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
               ),
             ),
-            SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight, // تنبيه right aligned
-              child: Text(
-                "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها.",
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              Text(
+                "⭐ قم بسحب وإفلات صور حروف لغة الإشارة بالترتيب الصحيح لتكوين الكلمة.\n"
+                "⭐ اضغط زر التحقق للتأكد من الإجابة.\n"
+                "⭐ اللعبة تتكون من 5 جولات.",
                 textDirection: TextDirection.rtl,
                 style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 14,
+                  color: Color(0xFF113F67),
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  "تنبيه: لا يمكنك تغيير ترتيب الحروف بعد إفلاتها.",
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                "حسناً",
+                style: TextStyle(
+                  color: Color(0xFF113F67),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              "حسناً",
-              style: TextStyle(
-                color: Color(0xFF113F67),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+        );
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -327,18 +337,18 @@ void initState() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE7EAF6),
+      backgroundColor: const Color(0xFFE7EAF6),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(Icons.help_outline),
+            icon: const Icon(Icons.help_outline),
             onPressed: _showTutorial,
           ),
           IconButton(
-            icon: Icon(Icons.arrow_forward),
+            icon: const Icon(Icons.arrow_forward),
             onPressed: () {
               Navigator.pushReplacement(
                 context,
@@ -355,10 +365,10 @@ void initState() {
           children: [
             Text(
               'الجولة $_currentRound من $_totalRounds',
-              style: TextStyle(fontSize: 20, color: Colors.black54),
+              style: const TextStyle(fontSize: 20, color: Colors.black54),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'رتب حروف لغة الإشارة لتكوين الكلمة الصحيحة',
               style: TextStyle(
                 fontSize: 24,
@@ -367,17 +377,19 @@ void initState() {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             Text(
               _currentWord,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF113F67),
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
+
+            // صور الحروف (Draggables)
             Wrap(
               spacing: 16.0,
               runSpacing: 16.0,
@@ -409,59 +421,69 @@ void initState() {
                 );
               }).toList(),
             ),
-            SizedBox(height: 20),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+
+            const SizedBox(height: 20),
+
+            // ✅ خانات الإسقاط (من اليمين لليسار فعلياً)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              textDirection: TextDirection.rtl,
               children: List.generate(_currentWord.length, (index) {
-                return DragTarget<String>(
-                  onAccept: (letter) => _onLetterSelected(index, letter),
-                  onWillAccept: (data) => true,
-                  builder: (context, candidateData, rejectedData) {
-                    return GestureDetector(
-                      onTap: () => _removeLetter(index),
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 300),
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: candidateData.isNotEmpty ? Colors.blue : Colors.grey,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: DragTarget<String>(
+                    onAccept: (letter) => _onLetterSelected(index, letter),
+                    onWillAccept: (data) => true,
+                    builder: (context, candidateData, rejectedData) {
+                      return GestureDetector(
+                        onTap: () => _removeLetter(index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: candidateData.isNotEmpty
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.grey[200],
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          color: Colors.grey[200],
+                          child: Center(
+                            child: _selectedLetters[index].isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.asset(
+                                      letterImages[_selectedLetters[index]]!,
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Container(),
+                          ),
                         ),
-                        child: Center(
-                          child: _selectedLetters[index] != ''
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.asset(
-                                    letterImages[_selectedLetters[index]]!,
-                                    width: 80,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Container(),
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               }),
             ),
-            SizedBox(height: 40),
+
+            const SizedBox(height: 40),
             ElevatedButton(
               onPressed: _checkAnswer,
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                backgroundColor: Color(0xFF38598B),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                backgroundColor: const Color(0xFF38598B),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'تحقق من الإجابة',
                 style: TextStyle(fontSize: 20, color: Colors.white),
               ),
@@ -474,7 +496,12 @@ void initState() {
         blastDirectionality: BlastDirectionality.explosive,
         blastDirection: pi,
         shouldLoop: false,
-        colors: [Colors.white, Colors.amber, Colors.redAccent, Colors.green],
+        colors: const [
+          Colors.white,
+          Colors.amber,
+          Colors.redAccent,
+          Colors.green,
+        ],
       ),
     );
   }
