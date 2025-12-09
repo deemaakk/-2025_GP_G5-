@@ -26,6 +26,44 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:906512269675:android:8a4016ea3c70d6a8becc2e",
+        "android_client_info": {
+          "package_name": "com.example.edu_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906512269675:android:ba1df08fc949a1c5becc2e",
+        "android_client_info": {
+          "package_name": "com.example.laweh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArZcpeFQFJmCK2powA8SubU5B7FWJexGM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:906512269675:android:4f8e6bd95fdcbb11becc2e",
         "android_client_info": {
           "package_name": "com.example.laweh_app"
